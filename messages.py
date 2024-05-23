@@ -14,7 +14,9 @@ messages = {
         "confirm": "Confirm",
         "show_more": "Show More",
         "website_text": "Company website",
-        "maps_text": "Company Google Maps location"
+        "maps_text": "Company Google Maps location",
+        "chose_district": "You chose district: {district}",
+        "chose_speciality": "You chose specialization: {speciality}"
     },
     "ru": {
         "welcome": "👋 Добро пожаловать в бот Phuket Clinic Finder! 🌴\n\nЭтот бот поможет вам найти лучшие медицинские клиники на Пхукете. Чтобы начать, просто отправьте команду /findclinic. 🏥✨",
@@ -29,7 +31,9 @@ messages = {
         "confirm": "Подтвердить",
         "show_more": "Показать больше",
         "website_text": "Сайт компании",
-        "maps_text": "Местоположение компании на Google Maps"
+        "maps_text": "Местоположение компании на Google Maps",
+        "chose_district": "Вы выбрали район: {district}",
+        "chose_speciality": "Вы выбрали специализацию: {speciality}"
     },
     "de": {
         "welcome": "👋 Willkommen beim Phuket Clinic Finder Bot! 🌴\n\nDieser Bot hilft Ihnen, die besten medizinischen Kliniken in Phuket zu finden. Um zu beginnen, senden Sie einfach den Befehl /findclinic. 🏥✨",
@@ -44,7 +48,9 @@ messages = {
         "confirm": "Bestätigen",
         "show_more": "Mehr anzeigen",
         "website_text": "Firmenwebsite",
-        "maps_text": "Standort der Firma auf Google Maps"
+        "maps_text": "Standort der Firma auf Google Maps",
+        "chose_district": "Sie haben den Bezirk gewählt: {district}",
+        "chose_speciality": "Sie haben die Spezialisierung gewählt: {speciality}"
     },
     "th": {
         "welcome": "👋 ยินดีต้อนรับสู่บอท Phuket Clinic Finder! 🌴\n\nบอทนี้ช่วยให้คุณค้นหาคลินิกทางการแพทย์ที่ดีที่สุดในภูเก็ต ในการเริ่มต้น เพียงส่งคำสั่ง /findclinic. 🏥✨",
@@ -59,6 +65,8 @@ messages = {
         "confirm": "ยืนยัน",
         "show_more": "แสดงเพิ่มเติม",
         "website_text": "เว็บไซต์บริษัท",
-        "maps_text": "ที่ตั้งบริษัทบน Google Maps"
+        "maps_text": "ที่ตั้งบริษัทบน Google Maps",
+        "chose_district": "คุณเลือกพื้นที่: {district}",
+        "chose_speciality": "คุณเลือกความเชี่ยวชาญ: {speciality}"
     }
 }
