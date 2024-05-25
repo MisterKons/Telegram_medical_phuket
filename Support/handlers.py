@@ -1,13 +1,9 @@
 from pyrogram import filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from .database import fetch_unique_values, send_clinics
+from .database import send_clinics
 from .messages import messages, lang_choice
 from .utils import create_column_buttons
 import re
-
-# Fetch and store available districts and specialities
-districts = fetch_unique_values('district_new')
-specialities = fetch_unique_values('type')
 
 def register_handlers(app):
     @app.on_message(filters.command("start") & filters.private)
@@ -31,7 +27,7 @@ def register_handlers(app):
         lang = app.user_data[user_id]["lang"]
 
         # Show district selection
-        district_keyboard = create_column_buttons(districts, "district")
+        district_keyboard = create_column_buttons(messages[lang]["districts"], "district")
         await client.send_message(user_id, messages[lang]["choose_area"], reply_markup=district_keyboard)
 
     @app.on_callback_query()
@@ -57,7 +53,7 @@ def register_handlers(app):
             app.user_data[user_id]["district_new"] = district
 
             # Show speciality selection
-            speciality_keyboard = create_column_buttons(specialities, "speciality")
+            speciality_keyboard = create_column_buttons(messages[lang]["clinic_types"], "speciality")
             await callback_query.message.edit_text(messages[lang]["choose_speciality"], reply_markup=speciality_keyboard)
 
         elif data.startswith("speciality_"):
@@ -109,7 +105,7 @@ def register_handlers(app):
             lang = user_data["lang"]
 
             # Restart from district selection
-            district_keyboard = create_column_buttons(districts, "district")
+            district_keyboard = create_column_buttons(messages[lang]["districts"], "district")
             await callback_query.message.edit_text(messages[lang]["choose_area"], reply_markup=district_keyboard)
 
         elif data == "stop":
