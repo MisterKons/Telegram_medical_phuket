@@ -21,11 +21,13 @@ app.user_data = {}
 # Register handlers
 register_handlers(app)
 
+
 # Run the bot
 async def main():
     async with app:
         print("Bot is running...")
         await idle()
+
 
 # Start the event loop
 loop = asyncio.get_event_loop()

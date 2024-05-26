@@ -1,30 +1,40 @@
-from pymongo import MongoClient
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from .credentials import MONGO_URI
 import re
-from .messages import messages
+from motor.motor_asyncio import AsyncIOMotorClient
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from Support.credentials import MONGO_URI
+from Support.messages import messages
 
-# Connect to MongoDB
-client = MongoClient(MONGO_URI)
-db = client['kons_new']
+client_my = AsyncIOMotorClient(MONGO_URI)
+db = client_my['kons_new']
 collection = db['clinics']
 
-# Function to fetch unique values from a specified field
-def fetch_unique_values(field_name):
-    return collection.distinct(field_name)
 
-# Function to get all sub_types
-def get_sub_types():
-    return fetch_unique_values('Sub_type')
+async def fetch_unique_values(field_name):
+    return await collection.distinct(field_name)
 
-# Function to send clinics in batches of 3
+
+async def get_sub_types():
+    return await fetch_unique_values('Sub_type')
+
+
 async def send_clinics(client, user_id, district, speciality, sent_clinics, message_id, lang):
-    # Проверяем, используется ли специализированная клиника
+    query = {"district_new": district}
     if client.user_data[user_id].get("specialized_clinic", False):
-        # Используем регулярное выражение для поиска по частичному совпадению
-        clinics = list(collection.find({"district_new": district, "Sub_type": re.compile(speciality, re.IGNORECASE)}))
+        query["Sub_type"] = re.compile(speciality, re.IGNORECASE)
     else:
-        clinics = list(collection.find({"district_new": district, "type": speciality}))
+        query["type"] = speciality
+
+    clinics_cursor = collection.find(query, {
+        "_id": 1,
+        "name": 1,
+        "phone_number": 1,
+        "website": 1,
+        "place_link": 1,
+        "type": 1,
+        "Sub_type": 1
+    })
+
+    clinics = await clinics_cursor.to_list(length=100)
 
     unsent_clinics = [clinic for clinic in clinics if clinic['_id'] not in sent_clinics]
     response = messages[lang]["clinic_info"]

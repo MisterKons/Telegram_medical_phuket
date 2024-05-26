@@ -1,5 +1,6 @@
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
+
 # Function to create inline keyboard buttons in 2 columns
 def create_column_buttons(options, prefix):
     keyboard = []
