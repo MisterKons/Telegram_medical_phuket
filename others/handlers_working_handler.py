@@ -3,7 +3,6 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from .database import send_clinics
 from .messages_base import messages, lang_choice
 from .utils import create_column_buttons
-from .credentials import ADMIN_ID
 
 def translate_to_english(value, category, lang):
     if category == "districts":
@@ -33,25 +32,28 @@ def register_handlers(app):
         if user_id not in app.user_data:
             app.user_data[user_id] = {"sent_clinics": set(), "lang": "en"}
         lang = app.user_data[user_id]["lang"]
-
-        # Show district selection
-        district_keyboard = create_column_buttons(messages[lang]["districts"], "district")
-        await client.send_message(user_id, messages[lang]["choose_area"], reply_markup=district_keyboard)
     
+
     @app.on_message(filters.command("feedback") & filters.private)
     async def feedback(client, message):
+        print("Feedback handler triggered")  # Debug log
         user_id = message.from_user.id
         lang = app.user_data.get(user_id, {}).get("lang", "en")
         
         feedback_message_user = messages[lang]["feedback_user"]
+        feedback_message_owner = messages[lang]["feedback_owner"]
         
         # Отправляем сообщение пользователю
         await client.send_message(user_id, feedback_message_user)
 
-    def register_handlers(app):
-        @app.on_message(filters.command("feedback") & filters.private)
-        async def feedback_handler(client, message):
-            await feedback(client, message)
+        # Пересылаем сообщение координатору
+        coordinator_username = "konstantinMrk"
+        forward_message = f"User {user_id} sent feedback.\n\n{feedback_message_owner}"
+        await client.send_message(f"@{coordinator_username}", forward_message)
+
+        # Show district selection
+        district_keyboard = create_column_buttons(messages[lang]["districts"], "district")
+        await client.send_message(user_id, messages[lang]["choose_area"], reply_markup=district_keyboard)
 
     @app.on_callback_query()
     async def handle_callback_query(client, callback_query):

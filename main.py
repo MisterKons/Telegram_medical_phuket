@@ -1,8 +1,8 @@
 import asyncio
 import nest_asyncio
 from pyrogram import Client, idle
-from Support.credentials import API_ID, API_HASH, BOT_TOKEN
-from Support.handlers import register_handlers
+from support.credentials import API_ID, API_HASH, BOT_TOKEN
+from support.handlers import register_handlers
 
 # Apply nest_asyncio to allow nested event loops
 nest_asyncio.apply()
