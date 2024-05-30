@@ -20,9 +20,9 @@ def register_handlers(app):
         # Предлагаем выбрать язык
         lang_keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("English", callback_data="lang_en")],
-            [InlineKeyboardButton("Русский", callback_data="lang_ru")],
-            [InlineKeyboardButton("Deutsch", callback_data="lang_de")],
-            [InlineKeyboardButton("ไทย", callback_data="lang_th")]
+            [InlineKeyboardButton("Русский", callback_data="lang_rus")],
+            [InlineKeyboardButton("Deutsch", callback_data="lang_ger")],
+            [InlineKeyboardButton("ไทย", callback_data="lang_thai")]
         ])
         welcome_message = await message.reply_text(lang_choice, reply_markup=lang_keyboard)
         app.user_data[user_id]['welcome_message_ids'].append(welcome_message.id)
@@ -37,21 +37,38 @@ def register_handlers(app):
         # Show district selection
         district_keyboard = create_column_buttons(messages[lang]["districts"], "district")
         await client.send_message(user_id, messages[lang]["choose_area"], reply_markup=district_keyboard)
-    
+
     @app.on_message(filters.command("feedback") & filters.private)
     async def feedback(client, message):
         user_id = message.from_user.id
         lang = app.user_data.get(user_id, {}).get("lang", "en")
-        
+
         feedback_message_user = messages[lang]["feedback_user"]
-        
+        app.user_data[user_id]["awaiting_feedback"] = True
+
         # Отправляем сообщение пользователю
         await client.send_message(user_id, feedback_message_user)
 
-    def register_handlers(app):
-        @app.on_message(filters.command("feedback") & filters.private)
-        async def feedback_handler(client, message):
-            await feedback(client, message)
+    @app.on_message(filters.text & filters.private)
+    async def handle_feedback_input(client, message):
+        user_id = message.from_user.id
+        if user_id in app.user_data and app.user_data[user_id].get("awaiting_feedback"):
+            feedback = message.text
+            app.user_data[user_id]["awaiting_feedback"] = False
+            lang = app.user_data[user_id]["lang"]
+
+            # Send feedback to administrator
+            
+            await client.send_message(chat_id=ADMIN_ID, text=f"New feedback from user {user_id}:\n\n{feedback}")
+
+            # Thank the user for their feedback
+            await client.send_message(user_id, messages[lang]["thank_you_feedback"])
+
+            # Offer to start over
+            start_keyboard = InlineKeyboardMarkup([
+                [InlineKeyboardButton("Start Over", callback_data="start_over")]
+            ])
+            await client.send_message(user_id, messages[lang]["start_over_prompt"], reply_markup=start_keyboard)
 
     @app.on_callback_query()
     async def handle_callback_query(client, callback_query):
@@ -150,6 +167,9 @@ def register_handlers(app):
             lang = app.user_data[user_id]["lang"]
             await client.edit_message_text(user_id, callback_query.message.id, messages[lang]["goodbye"])
 
+        elif data == "start_over":
+            await start(client, callback_query.message)
+
     @app.on_message(filters.text & filters.private)
     async def handle_speciality_input(client, message):
         user_id = message.from_user.id
@@ -174,10 +194,3 @@ def register_handlers(app):
                 messages[lang]["confirm_choices"].format(district=district, speciality=speciality),
                 reply_markup=reply_markup
             )
-
-def create_column_buttons(options, prefix):
-    keyboard = []
-    for i in range(0, len(options), 2):
-        row = [InlineKeyboardButton(option, callback_data=f"{prefix}_{option}") for option in options[i:i + 2]]
-        keyboard.append(row)
-    return InlineKeyboardMarkup(keyboard)
