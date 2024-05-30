@@ -2,22 +2,16 @@ from pyrogram import filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from .database import send_clinics
 from .messages_base import messages, lang_choice
-from .utils import create_column_buttons
-from .credentials import ADMIN_ID
-
-def translate_to_english(value, category, lang):
-    if category == "districts":
-        return next((k for k, v in zip(messages["en"]["districts"], messages[lang]["districts"]) if v == value), value)
-    elif category == "clinic_types":
-        return next((k for k, v in zip(messages["en"]["clinic_types"], messages[lang]["clinic_types"]) if v == value), value)
+from .utils import translate_to_english, create_column_buttons
+from .feedback_handler import feedback_handler, handle_feedback_input
 
 def register_handlers(app):
     @app.on_message(filters.command("start") & filters.private)
     async def start(client, message):
         user_id = message.from_user.id
-        app.user_data[user_id] = {"sent_clinics": set(), "lang": "en", "welcome_message_ids": []}
+        client.user_data[user_id] = {"sent_clinics": set(), "lang": "en", "welcome_message_ids": []}
 
-        # Предлагаем выбрать язык
+        # Offer language selection
         lang_keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("English", callback_data="lang_en")],
             [InlineKeyboardButton("Русский", callback_data="lang_rus")],
@@ -25,14 +19,14 @@ def register_handlers(app):
             [InlineKeyboardButton("ไทย", callback_data="lang_thai")]
         ])
         welcome_message = await message.reply_text(lang_choice, reply_markup=lang_keyboard)
-        app.user_data[user_id]['welcome_message_ids'].append(welcome_message.id)
+        client.user_data[user_id]['welcome_message_ids'].append(welcome_message.id)
 
     @app.on_message(filters.command("findclinic") & filters.private)
     async def find_clinic(client, message):
         user_id = message.from_user.id
-        if user_id not in app.user_data:
-            app.user_data[user_id] = {"sent_clinics": set(), "lang": "en"}
-        lang = app.user_data[user_id]["lang"]
+        if user_id not in client.user_data:
+            client.user_data[user_id] = {"sent_clinics": set(), "lang": "en"}
+        lang = client.user_data[user_id]["lang"]
 
         # Show district selection
         district_keyboard = create_column_buttons(messages[lang]["districts"], "district")
@@ -40,49 +34,30 @@ def register_handlers(app):
 
     @app.on_message(filters.command("feedback") & filters.private)
     async def feedback(client, message):
-        user_id = message.from_user.id
-        lang = app.user_data.get(user_id, {}).get("lang", "en")
-
-        feedback_message_user = messages[lang]["feedback_user"]
-        app.user_data[user_id]["awaiting_feedback"] = True
-
-        # Отправляем сообщение пользователю
-        await client.send_message(user_id, feedback_message_user)
+        await feedback_handler(client, message)
 
     @app.on_message(filters.text & filters.private)
-    async def handle_feedback_input(client, message):
+    async def handle_text_message(client, message):
         user_id = message.from_user.id
-        if user_id in app.user_data and app.user_data[user_id].get("awaiting_feedback"):
-            feedback = message.text
-            app.user_data[user_id]["awaiting_feedback"] = False
-            lang = app.user_data[user_id]["lang"]
-
-            # Send feedback to administrator
-            
-            await client.send_message(chat_id=ADMIN_ID, text=f"New feedback from user {user_id}:\n\n{feedback}")
-
-            # Thank the user for their feedback
-            await client.send_message(user_id, messages[lang]["thank_you_feedback"])
-
-            # Offer to start over
-            start_keyboard = InlineKeyboardMarkup([
-                [InlineKeyboardButton("Start Over", callback_data="start_over")]
-            ])
-            await client.send_message(user_id, messages[lang]["start_over_prompt"], reply_markup=start_keyboard)
+        if client.user_data.get(user_id, {}).get("awaiting_feedback"):
+            await handle_feedback_input(client, message)
+        elif client.user_data.get(user_id, {}).get("awaiting_speciality_input"):
+            await handle_speciality_input(client, message)
+        # Add other text message handling here if needed
 
     @app.on_callback_query()
     async def handle_callback_query(client, callback_query):
         data = callback_query.data
         user_id = callback_query.from_user.id
 
-        if user_id not in app.user_data:
-            app.user_data[user_id] = {"sent_clinics": set(), "lang": "en"}
+        if user_id not in client.user_data:
+            client.user_data[user_id] = {"sent_clinics": set(), "lang": "en"}
 
-        lang = app.user_data[user_id]["lang"]
+        lang = client.user_data[user_id]["lang"]
 
         if data.startswith("lang_"):
             lang = data.split("_")[1]
-            app.user_data[user_id]["lang"] = lang
+            client.user_data[user_id]["lang"] = lang
             welcome_message = messages[lang]["welcome"]
             await callback_query.message.edit_text(welcome_message)
 
@@ -93,7 +68,7 @@ def register_handlers(app):
                 await client.send_message(user_id, messages[lang]["chose_district"].format(district=district_name))
 
                 # Store user data
-                app.user_data[user_id]["district_new"] = district_name
+                client.user_data[user_id]["district_new"] = district_name
 
                 # Show speciality selection
                 speciality_keyboard = create_column_buttons(messages[lang]["clinic_types"], "speciality")
@@ -105,19 +80,19 @@ def register_handlers(app):
             speciality = data.split("_")[1]
             speciality_name = next((s for s in messages[lang]["clinic_types"] if s == speciality), None)
             if speciality_name:
-                if speciality_name == messages[lang]["clinic_types"][3]:  # Используем переведенное значение для "Specialized Clinic"
+                if speciality_name == messages[lang]["clinic_types"][3]:  # Use translated value for "Specialized Clinic"
                     await client.send_message(user_id, messages[lang]["enter_speciality"])
-                    app.user_data[user_id]["awaiting_speciality_input"] = True
-                    app.user_data[user_id]["specialized_clinic"] = True
+                    client.user_data[user_id]["awaiting_speciality_input"] = True
+                    client.user_data[user_id]["specialized_clinic"] = True
                 else:
                     await client.send_message(user_id, messages[lang]["chose_speciality"].format(speciality=speciality_name))
 
                     # Store user data
-                    app.user_data[user_id]["type"] = speciality_name
-                    app.user_data[user_id]["specialized_clinic"] = False
+                    client.user_data[user_id]["type"] = speciality_name
+                    client.user_data[user_id]["specialized_clinic"] = False
 
                     # Confirm choices
-                    district = app.user_data[user_id]["district_new"]
+                    district = client.user_data[user_id]["district_new"]
                     keyboard = [
                         [InlineKeyboardButton(messages[lang]["confirm"], callback_data="confirm"),
                          InlineKeyboardButton(messages[lang]["try_again"], callback_data="try_again")]
@@ -130,12 +105,12 @@ def register_handlers(app):
                 await client.send_message(user_id, messages[lang]["invalid_speciality"])
 
         elif data == "confirm":
-            user_data = app.user_data[user_id]
+            user_data = client.user_data[user_id]
             district = user_data["district_new"]
             speciality = user_data["type"]
             lang = user_data["lang"]
 
-            # Ищем английские значения для district и speciality
+            # Translate district and speciality to English
             translated_district = translate_to_english(district, "districts", lang)
             translated_speciality = translate_to_english(speciality, "clinic_types", lang)
 
@@ -143,12 +118,12 @@ def register_handlers(app):
             await send_clinics(client, user_id, translated_district, translated_speciality, user_data["sent_clinics"], callback_query.message.id, lang)
 
         elif data == "send_more":
-            user_data = app.user_data[user_id]
+            user_data = client.user_data[user_id]
             district = user_data["district_new"]
             speciality = user_data["type"]
             lang = user_data["lang"]
 
-            # Ищем английские значения для district и speciality
+            # Translate district and speciality to English
             translated_district = translate_to_english(district, "districts", lang)
             translated_speciality = translate_to_english(speciality, "clinic_types", lang)
 
@@ -156,7 +131,7 @@ def register_handlers(app):
             await send_clinics(client, user_id, translated_district, translated_speciality, user_data["sent_clinics"], callback_query.message.id, lang)
 
         elif data == "try_again":
-            user_data = app.user_data[user_id]
+            user_data = client.user_data[user_id]
             lang = user_data["lang"]
 
             # Restart from district selection
@@ -164,26 +139,25 @@ def register_handlers(app):
             await callback_query.message.edit_text(messages[lang]["choose_area"], reply_markup=district_keyboard)
 
         elif data == "stop":
-            lang = app.user_data[user_id]["lang"]
+            lang = client.user_data[user_id]["lang"]
             await client.edit_message_text(user_id, callback_query.message.id, messages[lang]["goodbye"])
 
         elif data == "start_over":
             await start(client, callback_query.message)
 
-    @app.on_message(filters.text & filters.private)
     async def handle_speciality_input(client, message):
         user_id = message.from_user.id
-        if user_id in app.user_data and app.user_data[user_id].get("awaiting_speciality_input"):
+        if user_id in client.user_data and client.user_data[user_id].get("awaiting_speciality_input"):
             speciality = message.text
 
-            app.user_data[user_id]["type"] = speciality
-            app.user_data[user_id]["awaiting_speciality_input"] = False
-            lang = app.user_data[user_id]["lang"]
+            client.user_data[user_id]["type"] = speciality
+            client.user_data[user_id]["awaiting_speciality_input"] = False
+            lang = client.user_data[user_id]["lang"]
 
             await client.send_message(user_id, messages[lang]["chose_speciality"].format(speciality=speciality))
 
             # Confirm choices
-            district = app.user_data[user_id]["district_new"]
+            district = client.user_data[user_id]["district_new"]
             keyboard = [
                 [InlineKeyboardButton(messages[lang]["confirm"], callback_data="confirm"),
                  InlineKeyboardButton(messages[lang]["try_again"], callback_data="try_again")]
