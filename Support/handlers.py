@@ -37,12 +37,21 @@ def register_handlers(app):
         district_keyboard = create_column_buttons(messages[lang]["districts"], "district")
         await client.send_message(user_id, messages[lang]["choose_area"], reply_markup=district_keyboard)
     
+    
 
+    
     @app.on_message(filters.command("feedback") & filters.private)
     async def feedback(client, message):
         await feedback_handler(client, message)
 
-    register_medicine_handlers(app)
+    @app.on_message(filters.text & filters.private)
+    async def handle_text_message(client, message):
+        user_id = message.from_user.id
+        if client.user_data.get(user_id, {}).get("awaiting_feedback"):
+            await handle_feedback_input(client, message)
+        elif client.user_data.get(user_id, {}).get("awaiting_speciality_input"):
+            await handle_speciality_input(client, message)
+  
 
     @app.on_callback_query()
     async def handle_callback_query(client, callback_query):
@@ -168,3 +177,6 @@ def register_handlers(app):
                 messages[lang]["confirm_choices"].format(district=district, speciality=speciality),
                 reply_markup=reply_markup
             )
+    @app.on_message(filters.command("medicine") & filters.private)
+    async def medicine(client, message):
+        await register_medicine_handlers(client, message)
