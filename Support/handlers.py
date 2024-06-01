@@ -4,6 +4,11 @@ from .database import send_clinics
 from .messages_base import messages, lang_choice
 from .utils import translate_to_english, create_column_buttons
 from .feedback_handler import feedback_handler, handle_feedback_input
+import re
+from .medicine_handler import register_medicine_handlers
+
+def is_valid_medicine_name(name):
+    return re.match("^[A-Za-z0-9А-Яа-я]+$", name) is not None
 
 def register_handlers(app):
     @app.on_message(filters.command("start") & filters.private)
@@ -31,19 +36,13 @@ def register_handlers(app):
         # Show district selection
         district_keyboard = create_column_buttons(messages[lang]["districts"], "district")
         await client.send_message(user_id, messages[lang]["choose_area"], reply_markup=district_keyboard)
+    
 
     @app.on_message(filters.command("feedback") & filters.private)
     async def feedback(client, message):
         await feedback_handler(client, message)
 
-    @app.on_message(filters.text & filters.private)
-    async def handle_text_message(client, message):
-        user_id = message.from_user.id
-        if client.user_data.get(user_id, {}).get("awaiting_feedback"):
-            await handle_feedback_input(client, message)
-        elif client.user_data.get(user_id, {}).get("awaiting_speciality_input"):
-            await handle_speciality_input(client, message)
-        # Add other text message handling here if needed
+    register_medicine_handlers(app)
 
     @app.on_callback_query()
     async def handle_callback_query(client, callback_query):
@@ -144,7 +143,8 @@ def register_handlers(app):
 
         elif data == "start_over":
             await start(client, callback_query.message)
-
+    
+            
     async def handle_speciality_input(client, message):
         user_id = message.from_user.id
         if user_id in client.user_data and client.user_data[user_id].get("awaiting_speciality_input"):
