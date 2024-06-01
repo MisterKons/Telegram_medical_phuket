@@ -8,17 +8,21 @@ from .credentials import ADMIN_ID
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-async def feedback_handler(client: Client, message):
+
+async def feedback_handler(client, message):
     user_id = message.from_user.id
+    if user_id not in client.user_data:
+        client.user_data[user_id] = {"sent_clinics": set(), "lang": "en"}
     lang = client.user_data.get(user_id, {}).get("lang", "en")
 
     feedback_message_user = messages[lang]["feedback_user"]
     client.user_data[user_id]["awaiting_feedback"] = True
 
-    # Send message to the user
+    # Send a message to the user
     await client.send_message(user_id, feedback_message_user)
 
-async def handle_feedback_input(client: Client, message):
+
+async def handle_feedback_input(client, message):
     user_id = message.from_user.id
     user = message.from_user
     username = user.username or user.first_name or user_id  # Use username if available, else first name, else user ID

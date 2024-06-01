@@ -8,11 +8,14 @@ client_my = AsyncIOMotorClient(MONGO_URI)
 db = client_my['kons_new']
 collection = db['clinics']
 
+
 async def fetch_unique_values(field_name):
     return await collection.distinct(field_name)
 
+
 async def get_sub_types():
     return await fetch_unique_values('Sub_type')
+
 
 async def send_clinics(client, user_id, district, speciality, sent_clinics, message_id, lang):
     query = {"district_new": district}

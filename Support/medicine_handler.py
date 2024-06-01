@@ -1,6 +1,5 @@
+# medicine_handler.py
 import logging
-from pyrogram import Client, filters
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -13,35 +12,37 @@ import re
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def register_medicine_handlers(client: Client, message):
-    @app.on_message(filters.command("medicine") & filters.private)
-    async def medicine(client, message):
-        user_id = message.from_user.id
-        client.user_data[user_id]["awaiting_medicine_input"] = True
 
-        instruction_message = "📝 Пожалуйста, введите название лекарства, которое вы ищете. Не используйте специальные символы, такие как $#@!., и т.д. 👇\n\n🔎 Поиск может занять до 10 секунд."
-        await message.reply_text(instruction_message)
+async def register_medicine_handlers(client, message):
+    user_id = message.from_user.id
+    client.user_data[user_id] = client.user_data.get(user_id, {})
+    instruction_message = ("📝 Пожалуйста, введите название лекарства, которое вы ищете. Не используйте специальные "
+                           "символы, такие как $#@!., и т.д. 👇\n\n🔎 Поиск может занять до 10 секунд.")
+    client.user_data[user_id]["awaiting_medicine_input"] = True
 
-    @app.on_message(filters.text & filters.private)
-    async def handle_medicine_input(client, message):
-        user_id = message.from_user.id
-        if user_id in client.user_data and client.user_data[user_id].get("awaiting_medicine_input"):
-            medicine_name = message.text
-            client.user_data[user_id]["awaiting_medicine_input"] = False
+    await client.send_message(user_id, instruction_message)
 
-            if re.match("^[A-Za-z0-9А-Яа-я]+$", medicine_name):
-                await message.reply_text("🔄 Выполняется поиск аналогов лекарства... Пожалуйста, подождите.")
-                analogs = search_drug_analogs(medicine_name)
-                if analogs:
-                    response = "🔍 Найдены следующие аналоги:\n\n"
-                    for link, snippet in analogs:
-                        response += f"🔗 [{snippet}]({link})\n\n"
-                else:
-                    response = "❌ Извините, аналогов не найдено."
+
+async def handle_medicine_input(client, message):
+    user_id = message.from_user.id
+    if user_id in client.user_data and client.user_data[user_id].get("awaiting_medicine_input"):
+        medicine_name = message.text
+        client.user_data[user_id]["awaiting_medicine_input"] = False
+
+        if re.match("^[A-Za-z0-9А-Яа-я]+$", medicine_name):
+            await message.reply_text("🔄 Выполняется поиск аналогов лекарства... Пожалуйста, подождите.")
+            analogs = search_drug_analogs(medicine_name)
+            if analogs:
+                response = "🔍 Найдены следующие аналоги:\n\n"
+                for link, snippet in analogs:
+                    response += f"🔗 [{snippet}]({link})\n\n"
             else:
-                response = "⚠️ Неправильное название лекарства. Пожалуйста, попробуйте еще раз, избегая специальных символов."
+                response = "❌ Извините, аналогов не найдено."
+        else:
+            response = "⚠️ Неправильное название лекарства. Пожалуйста, попробуйте еще раз, избегая специальных символов."
 
-            await message.reply_text(response, disable_web_page_preview=True)
+        await message.reply_text(response, disable_web_page_preview=True)
+
 
 def search_drug_analogs(russian_drug_name):
     options = webdriver.ChromeOptions()

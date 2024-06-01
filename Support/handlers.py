@@ -1,10 +1,12 @@
+# handlers.py
 from pyrogram import filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from .database import send_clinics
 from .messages_base import messages, lang_choice
 from .utils import translate_to_english, create_column_buttons
 from .feedback_handler import feedback_handler, handle_feedback_input
-from .medicine_handler import handle_medicine_input,register_medicine_handlers
+from .medicine_handler import handle_medicine_input, register_medicine_handlers
+
 
 def register_handlers(app):
     @app.on_message(filters.command("start") & filters.private)
@@ -30,7 +32,7 @@ def register_handlers(app):
 
         district_keyboard = create_column_buttons(messages[lang]["districts"], "district")
         await client.send_message(user_id, messages[lang]["choose_area"], reply_markup=district_keyboard)
-    
+
     @app.on_message(filters.command("feedback") & filters.private)
     async def feedback(client, message):
         await feedback_handler(client, message)
@@ -74,7 +76,8 @@ def register_handlers(app):
                 client.user_data[user_id]["district_new"] = district_name
 
                 speciality_keyboard = create_column_buttons(messages[lang]["clinic_types"], "speciality")
-                await callback_query.message.edit_text(messages[lang]["choose_speciality"], reply_markup=speciality_keyboard)
+                await callback_query.message.edit_text(messages[lang]["choose_speciality"],
+                                                       reply_markup=speciality_keyboard)
             else:
                 await client.send_message(user_id, messages[lang]["invalid_district"])
 
@@ -87,7 +90,8 @@ def register_handlers(app):
                     client.user_data[user_id]["awaiting_speciality_input"] = True
                     client.user_data[user_id]["specialized_clinic"] = True
                 else:
-                    await client.send_message(user_id, messages[lang]["chose_speciality"].format(speciality=speciality_name))
+                    await client.send_message(user_id,
+                                              messages[lang]["chose_speciality"].format(speciality=speciality_name))
 
                     client.user_data[user_id]["type"] = speciality_name
                     client.user_data[user_id]["specialized_clinic"] = False
@@ -113,7 +117,8 @@ def register_handlers(app):
             translated_district = translate_to_english(district, "districts", lang)
             translated_speciality = translate_to_english(speciality, "clinic_types", lang)
 
-            await send_clinics(client, user_id, translated_district, translated_speciality, user_data["sent_clinics"], callback_query.message.id, lang)
+            await send_clinics(client, user_id, translated_district, translated_speciality, user_data["sent_clinics"],
+                               callback_query.message.id, lang)
 
         elif data == "send_more":
             user_data = client.user_data[user_id]
@@ -124,7 +129,8 @@ def register_handlers(app):
             translated_district = translate_to_english(district, "districts", lang)
             translated_speciality = translate_to_english(speciality, "clinic_types", lang)
 
-            await send_clinics(client, user_id, translated_district, translated_speciality, user_data["sent_clinics"], callback_query.message.id, lang)
+            await send_clinics(client, user_id, translated_district, translated_speciality, user_data["sent_clinics"],
+                               callback_query.message.id, lang)
 
         elif data == "try_again":
             user_data = client.user_data[user_id]
@@ -162,4 +168,3 @@ def register_handlers(app):
                 messages[lang]["confirm_choices"].format(district=district, speciality=speciality),
                 reply_markup=reply_markup
             )
-    register_medicine_handlers(app)
