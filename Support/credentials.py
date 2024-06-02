@@ -10,3 +10,4 @@ MONGO_URI = ('mongodb+srv://kons_new:ENQ7veCUkpk5BXk8@cluster123.z7szl9t.mongodb
 
 ADMIN_ID = {"KonstantinMRk": 961020144}
 
+TOKEN_HUGGINGFACE = "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"
