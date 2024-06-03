@@ -3,7 +3,7 @@ import nest_asyncio
 from pyrogram import Client, idle
 from support.credentials import API_ID, API_HASH, BOT_TOKEN
 from support.handlers import register_handlers
-from others.database import init_db
+
 # Apply nest_asyncio to allow nested event loops
 nest_asyncio.apply()
 
@@ -15,7 +15,6 @@ app = Client(
     bot_token=BOT_TOKEN
 )
 
-init_db()
 
 # Initialize user_data dictionary
 app.user_data = {}

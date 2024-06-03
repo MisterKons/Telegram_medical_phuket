@@ -5,7 +5,7 @@ from .database import send_clinics
 from .messages_base import messages, lang_choice
 from .utils import translate_to_english, create_column_buttons
 from .feedback_handler import feedback_handler, handle_feedback_input
-from .medicine_handler import handle_medicine_input, register_medicine_handlers
+from .medicine_handler import handle_medicine_command
 
 
 def register_handlers(app):
@@ -39,7 +39,7 @@ def register_handlers(app):
 
     @app.on_message(filters.command("medicine") & filters.private)
     async def medicine(client, message):
-        await register_medicine_handlers(client, message)
+        await handle_medicine_command(client, message)
 
     @app.on_message(filters.text & filters.private)
     async def handle_text_message(client, message):
@@ -48,8 +48,6 @@ def register_handlers(app):
             await handle_feedback_input(client, message)
         elif client.user_data.get(user_id, {}).get("awaiting_speciality_input"):
             await handle_speciality_input(client, message)
-        elif client.user_data.get(user_id, {}).get("awaiting_medicine_input"):
-            await handle_medicine_input(client, message)
 
     @app.on_callback_query()
     async def handle_callback_query(client, callback_query):
