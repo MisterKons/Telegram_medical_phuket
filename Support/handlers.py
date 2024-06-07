@@ -1,4 +1,3 @@
-# handlers.py
 from pyrogram import filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from .database import send_clinics
@@ -6,7 +5,8 @@ from .messages_base import messages, lang_choice
 from .utils import translate_to_english, create_column_buttons
 from .feedback_handler import feedback_handler, handle_feedback_input
 from .medicine_handler import handle_medicine_command
-
+from .insurance_handler import insurance_handler
+import random
 
 def register_handlers(app):
     @app.on_message(filters.command("start") & filters.private)
@@ -23,9 +23,24 @@ def register_handlers(app):
         welcome_message = await message.reply_text(lang_choice, reply_markup=lang_keyboard)
         client.user_data[user_id]['welcome_message_ids'].append(welcome_message.id)
 
+    async def check_language_selected(client, user_id):
+        if user_id not in client.user_data or "lang" not in client.user_data[user_id]:
+            lang_keyboard = InlineKeyboardMarkup([
+                [InlineKeyboardButton("English", callback_data="lang_en")],
+                [InlineKeyboardButton("Русский", callback_data="lang_rus")],
+                [InlineKeyboardButton("Deutsch", callback_data="lang_ger")],
+                [InlineKeyboardButton("ไทย", callback_data="lang_thai")]
+            ])
+            await client.send_message(user_id, lang_choice, reply_markup=lang_keyboard)
+            return False
+        return True
+
     @app.on_message(filters.command("findclinic") & filters.private)
     async def find_clinic(client, message):
         user_id = message.from_user.id
+        if not await check_language_selected(client, user_id):
+            return
+
         if user_id not in client.user_data:
             client.user_data[user_id] = {"sent_clinics": set(), "lang": "en"}
         lang = client.user_data[user_id]["lang"]
@@ -35,19 +50,41 @@ def register_handlers(app):
 
     @app.on_message(filters.command("feedback") & filters.private)
     async def feedback(client, message):
+        user_id = message.from_user.id
+        if not await check_language_selected(client, user_id):
+            return
         await feedback_handler(client, message)
 
     @app.on_message(filters.command("medicine") & filters.private)
     async def medicine(client, message):
+        user_id = message.from_user.id
+        if not await check_language_selected(client, user_id):
+            return
         await handle_medicine_command(client, message)
+
+    @app.on_message(filters.command("insurance") & filters.private)
+    async def insurance(client, message):
+        user_id = message.from_user.id
+        if not await check_language_selected(client, user_id):
+            return
+        await insurance_handler(client, message)
 
     @app.on_message(filters.text & filters.private)
     async def handle_text_message(client, message):
         user_id = message.from_user.id
+        if not await check_language_selected(client, user_id):
+            return
+
+        user_name = message.from_user.first_name
+        lang = client.user_data[user_id]["lang"]
+        responses = messages[lang]["use_buttons"]
+
         if client.user_data.get(user_id, {}).get("awaiting_feedback"):
             await handle_feedback_input(client, message)
         elif client.user_data.get(user_id, {}).get("awaiting_speciality_input"):
             await handle_speciality_input(client, message)
+        else:
+            await message.reply_text(random.choice(responses).format(user_name=user_name))
 
     @app.on_callback_query()
     async def handle_callback_query(client, callback_query):

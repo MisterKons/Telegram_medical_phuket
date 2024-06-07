@@ -6,9 +6,10 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 website_list = [
-                "1. [Pillintrip](https://pillintrip.com/)",
-                "2. [Drugs.com](https://www.drugs.com/)"
-                ]
+    "1. [Pillintrip](https://pillintrip.com/)",
+    "2. [Drugs.com](https://www.drugs.com/)"
+]
+
 
 async def handle_medicine_command(client, message):
     user_id = message.from_user.id
