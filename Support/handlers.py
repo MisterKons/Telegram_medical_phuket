@@ -6,7 +6,9 @@ from .utils import translate_to_english, create_column_buttons
 from .feedback_handler import feedback_handler, handle_feedback_input
 from .medicine_handler import handle_medicine_command
 from .insurance_handler import insurance_handler
+from .analitics import track_new_user, track_message
 import random
+
 
 def register_handlers(app):
     @app.on_message(filters.command("start") & filters.private)
@@ -22,6 +24,9 @@ def register_handlers(app):
         ])
         welcome_message = await message.reply_text(lang_choice, reply_markup=lang_keyboard)
         client.user_data[user_id]['welcome_message_ids'].append(welcome_message.id)
+
+        # Track users
+        track_new_user(user_id)
 
     async def check_language_selected(client, user_id):
         if user_id not in client.user_data or "lang" not in client.user_data[user_id]:
@@ -48,12 +53,17 @@ def register_handlers(app):
         district_keyboard = create_column_buttons(messages[lang]["districts"], "district")
         await client.send_message(user_id, messages[lang]["choose_area"], reply_markup=district_keyboard)
 
+        # Track message
+        track_message(user_id)
+
     @app.on_message(filters.command("feedback") & filters.private)
     async def feedback(client, message):
         user_id = message.from_user.id
         if not await check_language_selected(client, user_id):
             return
         await feedback_handler(client, message)
+
+        track_message(user_id)
 
     @app.on_message(filters.command("medicine") & filters.private)
     async def medicine(client, message):
@@ -62,12 +72,16 @@ def register_handlers(app):
             return
         await handle_medicine_command(client, message)
 
+        track_message(user_id)
+
     @app.on_message(filters.command("insurance") & filters.private)
     async def insurance(client, message):
         user_id = message.from_user.id
         if not await check_language_selected(client, user_id):
             return
         await insurance_handler(client, message)
+
+        track_message(user_id)
 
     @app.on_message(filters.text & filters.private)
     async def handle_text_message(client, message):
@@ -193,6 +207,7 @@ def register_handlers(app):
             await client.send_message(user_id, messages[lang]["chose_speciality"].format(speciality=speciality))
 
             district = client.user_data[user_id]["district_new"]
+
             keyboard = [
                 [InlineKeyboardButton(messages[lang]["confirm"], callback_data="confirm"),
                  InlineKeyboardButton(messages[lang]["try_again"], callback_data="try_again")]
