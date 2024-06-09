@@ -1,5 +1,5 @@
 import requests
-from credentials import google_id
+from support.credentials import google_id
 
 GA_TRACKING_ID = google_id
 

@@ -1,8 +1,12 @@
 import asyncio
+import sys
+import os
 import nest_asyncio
 from pyrogram import Client, idle
-from credentials import API_ID, API_HASH, BOT_TOKEN
+from support.credentials import API_ID, API_HASH, BOT_TOKEN
 from support.handlers import register_handlers
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Apply nest_asyncio to allow nested event loops
 nest_asyncio.apply()
