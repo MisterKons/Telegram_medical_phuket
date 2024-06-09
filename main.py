@@ -3,8 +3,8 @@ import sys
 import os
 import nest_asyncio
 from pyrogram import Client, idle
-from support.credentials import API_ID, API_HASH, BOT_TOKEN
-from support.handlers import register_handlers
+from Support.credentials import API_ID, API_HASH, BOT_TOKEN
+from Support.handlers import register_handlers
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 

@@ -1,8 +1,8 @@
 import re
 from motor.motor_asyncio import AsyncIOMotorClient
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from support.credentials import MONGO_URI
-from support.messages_base import messages
+from Support.credentials import MONGO_URI
+from Support.messages_base import messages
 
 client_my = AsyncIOMotorClient(MONGO_URI, maxPoolSize=100)
 db = client_my['kons_new']

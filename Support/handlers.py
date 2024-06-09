@@ -1,12 +1,12 @@
 from pyrogram import filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from support.database import send_clinics
-from support.messages_base import messages, lang_choice
-from support.utils import translate_to_english, create_column_buttons
-from support.feedback_handler import feedback_handler, handle_feedback_input
-from support.medicine_handler import handle_medicine_command
-from support.insurance_handler import insurance_handler
-from support.analitics import track_new_user, track_message
+from Support.database import send_clinics
+from Support.messages_base import messages, lang_choice
+from Support.utils import translate_to_english, create_column_buttons
+from Support.feedback_handler import feedback_handler, handle_feedback_input
+from Support.medicine_handler import handle_medicine_command
+from Support.insurance_handler import insurance_handler
+from Support.analitics import track_new_user, track_message
 import random
 
 
