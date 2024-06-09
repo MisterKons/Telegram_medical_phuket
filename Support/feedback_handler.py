@@ -1,8 +1,7 @@
 import logging
-from pyrogram import Client
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from .messages_base import messages
-from .credentials import ADMIN_ID
+from credentials import ADMIN_ID
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
