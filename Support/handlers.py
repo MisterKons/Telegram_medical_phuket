@@ -13,7 +13,7 @@ def register_handlers(app):
     @app.on_message(filters.command("start") & filters.private)
     async def start(client, message):
         user_id = message.from_user.id
-        client.user_data[user_id] = {"sent_clinics": set(), "lang": "en", "welcome_message_ids": []}
+        client.user_data[user_id] = {"sent_clinics": set(), "lang": "en", "welcome_message_ids": [], "page": 0}
 
         lang_keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("English", callback_data="lang_en")],
@@ -46,7 +46,7 @@ def register_handlers(app):
             return
 
         if user_id not in client.user_data:
-            client.user_data[user_id] = {"sent_clinics": set(), "lang": "en"}
+            client.user_data[user_id] = {"sent_clinics": set(), "lang": "en", "page": 0}
         lang = client.user_data[user_id]["lang"]
 
         district_buttons = create_column_buttons(messages[lang]["districts"], "district")
@@ -107,9 +107,10 @@ def register_handlers(app):
         user_id = callback_query.from_user.id
 
         if user_id not in client.user_data:
-            client.user_data[user_id] = {"sent_clinics": set(), "lang": "en"}
+            client.user_data[user_id] = {"sent_clinics": set(), "lang": "en", "page": 0}
 
-        lang = client.user_data[user_id]["lang"]
+        user_data = client.user_data[user_id]
+        lang = user_data["lang"]
 
         if data.startswith("lang_"):
             lang = data.split("_")[1]
@@ -128,6 +129,7 @@ def register_handlers(app):
                 await client.send_message(user_id, messages[lang]["chose_district"].format(district=district_name))
 
                 client.user_data[user_id]["district_new"] = district_name
+                client.user_data[user_id]["page"] = 0
 
                 speciality_keyboard = create_column_buttons(messages[lang]["clinic_types"], "speciality")
                 await callback_query.message.edit_text(messages[lang]["choose_speciality"],
@@ -163,10 +165,22 @@ def register_handlers(app):
                 await client.send_message(user_id, messages[lang]["invalid_speciality"])
 
         elif data == "confirm":
-            user_data = client.user_data[user_id]
             district = user_data["district_new"]
             speciality = user_data["type"]
-            lang = user_data["lang"]
+
+            translated_district = translate_to_english(district, "districts", lang)
+            if translated_district == messages[lang]["all_districts"]:
+                translated_district = None  # Assuming the `send_clinics` function handles None as "all districts"
+            translated_speciality = translate_to_english(speciality, "clinic_types", lang)
+
+            user_data["page"] = 0
+            await send_clinics(client, user_id, translated_district, translated_speciality, user_data["sent_clinics"],
+                               callback_query.message.id, lang, page=user_data["page"])
+
+        elif data == "next_clinics":
+            user_data["page"] += 1
+            district = user_data["district_new"]
+            speciality = user_data["type"]
 
             translated_district = translate_to_english(district, "districts", lang)
             if translated_district == messages[lang]["all_districts"]:
@@ -174,13 +188,12 @@ def register_handlers(app):
             translated_speciality = translate_to_english(speciality, "clinic_types", lang)
 
             await send_clinics(client, user_id, translated_district, translated_speciality, user_data["sent_clinics"],
-                               callback_query.message.id, lang)
+                               callback_query.message.id, lang, page=user_data["page"])
 
-        elif data == "send_more":
-            user_data = client.user_data[user_id]
+        elif data == "previous_clinics":
+            user_data["page"] = max(user_data["page"] - 1, 0)
             district = user_data["district_new"]
             speciality = user_data["type"]
-            lang = user_data["lang"]
 
             translated_district = translate_to_english(district, "districts", lang)
             if translated_district == messages[lang]["all_districts"]:
@@ -188,19 +201,15 @@ def register_handlers(app):
             translated_speciality = translate_to_english(speciality, "clinic_types", lang)
 
             await send_clinics(client, user_id, translated_district, translated_speciality, user_data["sent_clinics"],
-                               callback_query.message.id, lang)
+                               callback_query.message.id, lang, page=user_data["page"])
 
         elif data == "try_again":
-            user_data = client.user_data[user_id]
-            lang = user_data["lang"]
-
             district_keyboard = create_column_buttons(messages[lang]["districts"], "district")
             all_districts_button = [InlineKeyboardButton(messages[lang]["all_districts"], callback_data="district_all")]
             district_keyboard = InlineKeyboardMarkup(district_keyboard.inline_keyboard + [all_districts_button])
             await callback_query.message.edit_text(messages[lang]["choose_area"], reply_markup=district_keyboard)
 
         elif data == "stop":
-            lang = client.user_data[user_id]["lang"]
             await client.edit_message_text(user_id, callback_query.message.id, messages[lang]["goodbye"])
 
         elif data == "start_over":

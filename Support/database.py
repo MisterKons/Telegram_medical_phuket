@@ -17,7 +17,7 @@ async def get_sub_types():
     return await fetch_unique_values('Sub_type')
 
 
-async def send_clinics(client, user_id, district, speciality, sent_clinics, message_id, lang):
+async def send_clinics(client, user_id, district, speciality, sent_clinics, message_id, lang, page=0):
     query = {}
     if district is not None:
         query["district_new"] = district
@@ -39,11 +39,22 @@ async def send_clinics(client, user_id, district, speciality, sent_clinics, mess
 
     clinics = await clinics_cursor.to_list(length=100)
 
-    unsent_clinics = [clinic for clinic in clinics if clinic['_id'] not in sent_clinics]
-    response = messages[lang]["clinic_info"]
-    count = 0
+    clinics_per_page = 3
+    total_clinics = len(clinics)
+    total_pages = (total_clinics + clinics_per_page - 1) // clinics_per_page  # округление вверх
 
-    for clinic in unsent_clinics[:3]:
+    if page >= total_pages:
+        page = total_pages - 1
+    if page < 0:
+        page = 0
+
+    start_index = page * clinics_per_page
+    end_index = start_index + clinics_per_page
+    clinics_to_show = clinics[start_index:end_index]
+
+    response = messages[lang]["clinic_info"] + f"\n{messages[lang]['page']}" + f" {page + 1} - {total_pages}\n\n"
+
+    for clinic in clinics_to_show:
         sub_type = clinic.get(f"Sub_type_{lang}") if lang != "en" else clinic.get("Sub_type")
         response += (
             f"**Name:** {clinic.get('name')}\n"
@@ -52,18 +63,21 @@ async def send_clinics(client, user_id, district, speciality, sent_clinics, mess
             f"**Location:** [{messages[lang]['maps_text']}]({clinic.get('place_link')})\n"
             f"**Specialization:** {clinic.get('type')} - {sub_type}\n\n"
         )
-        sent_clinics.add(clinic['_id'])
-        count += 1
 
-    if count == 0:
+    keyboard = []
+    if page > 0:
+        keyboard.append(InlineKeyboardButton(messages[lang]["previous"], callback_data="previous_clinics"))
+    if end_index < total_clinics:
+        keyboard.append(InlineKeyboardButton(messages[lang]["next"], callback_data="next_clinics"))
+
+    reply_markup = InlineKeyboardMarkup([keyboard]) if keyboard else None
+
+    if not clinics_to_show:
         response = messages[lang]["no_more_clinics"]
         keyboard = [
             [InlineKeyboardButton(messages[lang]["try_again"], callback_data="try_again")],
             [InlineKeyboardButton(messages[lang]["stop"], callback_data="stop")]
         ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-    else:
-        keyboard = [[InlineKeyboardButton(messages[lang]["show_more"], callback_data="send_more")]]
         reply_markup = InlineKeyboardMarkup(keyboard)
 
     await client.edit_message_text(user_id, message_id, response, reply_markup=reply_markup)
