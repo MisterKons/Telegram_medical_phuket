@@ -32,6 +32,7 @@ messages = {
         "show_more": "Show More",
         "website_text": "Company website",
         "maps_text": "Company Google Maps location",
+        "all_districts": "All Districts",
         "chose_district": "You chose district: {district}",
         "chose_speciality": "You chose specialization: {speciality}",
         "enter_speciality": "Please enter the speciality you are looking for:",
@@ -72,6 +73,7 @@ messages = {
         "website_text": "Веб-сайт компании",
         "maps_text": "Расположение компании на Google Maps",
         "chose_district": "Вы выбрали район: {district}",
+        "all_districts": "Все районы",
         "chose_speciality": "Вы выбрали специализацию: {speciality}",
         "enter_speciality": "Пожалуйста, введите специализацию, которую вы ищете:",
         "invalid_district": "Выбран неверный район. Пожалуйста, попробуйте снова.",
@@ -94,6 +96,7 @@ messages = {
             "Чтобы продолжить, {user_name}, пожалуйста, используйте доступные кнопки.",
             "{user_name}, нажмите на кнопки вместо ввода текста."
         ]
+
     },
     "ger": {
         "welcome": "👋 Willkommen beim Phuket Clinic Finder Bot! 🌴\n\nDieser Bot hilft Ihnen, die besten medizinischen Kliniken in Phuket zu finden. \nUm zu starten, verwenden Sie einen der Befehle:\n\n/start - Sprache auswählen und erster Schritt\n/findclinic - Beginnen Sie mit der Suche nach Kliniken nach Bezirken\n/medicine - Finden Sie Analoga von Arzneimitteln, ohne das Telegramm zu verlassen\n/insurance - In Entwicklung\n/feedback - Vorschläge und Feedback\n\nWir hoffen, dass Sie unseren Service genießen. Bitte verwenden Sie den Feedback-Befehl, um uns Feedback oder Empfehlungen zu senden. Wir freuen uns, mit Ihrer Hilfe zu verbessern. Für Empfehlungen und Beschwerden kontaktieren Sie @konstaninMrK 🏥✨",
@@ -110,6 +113,7 @@ messages = {
         "show_more": "Mehr anzeigen",
         "website_text": "Unternehmenswebseite",
         "maps_text": "Unternehmensstandort auf Google Maps",
+        "all_districts": "Alle Bezirke",
         "chose_district": "Sie haben den Bezirk gewählt: {district}",
         "chose_speciality": "Sie haben die Spezialisierung gewählt: {speciality}",
         "enter_speciality": "Bitte geben Sie die gesuchte Spezialisierung ein:",
@@ -149,6 +153,7 @@ messages = {
         "show_more": "แสดงเพิ่มเติม",
         "website_text": "เว็บไซต์บริษัท",
         "maps_text": "ตำแหน่งบริษัทบน Google Maps",
+        "all_districts": "ทุกเขต",
         "chose_district": "คุณเลือกเขต: {district}",
         "chose_speciality": "คุณเลือกความเชี่ยวชาญ: {speciality}",
         "enter_speciality": "โปรดป้อนความเชี่ยวชาญที่คุณกำลังมองหา:",

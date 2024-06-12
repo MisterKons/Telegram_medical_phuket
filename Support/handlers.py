@@ -9,7 +9,6 @@ from Support.insurance_handler import insurance_handler
 from Support.analitics import track_new_user, track_message
 import random
 
-
 def register_handlers(app):
     @app.on_message(filters.command("start") & filters.private)
     async def start(client, message):
@@ -50,7 +49,9 @@ def register_handlers(app):
             client.user_data[user_id] = {"sent_clinics": set(), "lang": "en"}
         lang = client.user_data[user_id]["lang"]
 
-        district_keyboard = create_column_buttons(messages[lang]["districts"], "district")
+        district_buttons = create_column_buttons(messages[lang]["districts"], "district")
+        all_districts_button = [InlineKeyboardButton(messages[lang]["all_districts"], callback_data="district_all")]
+        district_keyboard = InlineKeyboardMarkup(district_buttons.inline_keyboard + [all_districts_button])
         await client.send_message(user_id, messages[lang]["choose_area"], reply_markup=district_keyboard)
 
         # Track message
@@ -118,7 +119,11 @@ def register_handlers(app):
 
         elif data.startswith("district_"):
             district = data.split("_")[1]
-            district_name = next((d for d in messages[lang]["districts"] if d == district), None)
+            if district == "all":
+                district_name = messages[lang]["all_districts"]
+            else:
+                district_name = next((d for d in messages[lang]["districts"] if d == district), None)
+
             if district_name:
                 await client.send_message(user_id, messages[lang]["chose_district"].format(district=district_name))
 
@@ -164,6 +169,8 @@ def register_handlers(app):
             lang = user_data["lang"]
 
             translated_district = translate_to_english(district, "districts", lang)
+            if translated_district == messages[lang]["all_districts"]:
+                translated_district = None  # Assuming the `send_clinics` function handles None as "all districts"
             translated_speciality = translate_to_english(speciality, "clinic_types", lang)
 
             await send_clinics(client, user_id, translated_district, translated_speciality, user_data["sent_clinics"],
@@ -176,6 +183,8 @@ def register_handlers(app):
             lang = user_data["lang"]
 
             translated_district = translate_to_english(district, "districts", lang)
+            if translated_district == messages[lang]["all_districts"]:
+                translated_district = None  # Assuming the `send_clinics` function handles None as "all districts"
             translated_speciality = translate_to_english(speciality, "clinic_types", lang)
 
             await send_clinics(client, user_id, translated_district, translated_speciality, user_data["sent_clinics"],
@@ -186,6 +195,8 @@ def register_handlers(app):
             lang = user_data["lang"]
 
             district_keyboard = create_column_buttons(messages[lang]["districts"], "district")
+            all_districts_button = [InlineKeyboardButton(messages[lang]["all_districts"], callback_data="district_all")]
+            district_keyboard = InlineKeyboardMarkup(district_keyboard.inline_keyboard + [all_districts_button])
             await callback_query.message.edit_text(messages[lang]["choose_area"], reply_markup=district_keyboard)
 
         elif data == "stop":
